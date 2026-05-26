@@ -47,14 +47,13 @@ function App() {
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string>('');
 
-  // Theme initialization
+  // Theme
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as Theme | null;
+    const saved = localStorage.getItem('theme') as Theme | null;
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
-    
-    setTheme(initialTheme);
-    document.documentElement.classList.toggle('dark', initialTheme === 'dark');
+    const initial = saved || (prefersDark ? 'dark' : 'light');
+    setTheme(initial);
+    document.documentElement.classList.toggle('dark', initial === 'dark');
   }, []);
 
   const toggleTheme = () => {
@@ -64,9 +63,7 @@ function App() {
     localStorage.setItem('theme', newTheme);
   };
 
-  useEffect(() => {
-    loadConnections();
-  }, []);
+  useEffect(() => { loadConnections(); }, []);
 
   const loadConnections = async () => {
     const conns = await GetConnections();
@@ -82,10 +79,10 @@ function App() {
     setError('');
 
     try {
-      const schemas = await GetSchemas(conn.ID);
+      const schemas = await GetSchemas(conn.id);
       const treeData: TreeNode[] = [];
       for (const schema of schemas) {
-        const tables = await GetTables(conn.ID, schema);
+        const tables = await GetTables(conn.id, schema);
         treeData.push({ schema, tables, isOpen: schema === 'public' });
       }
       setTree(treeData);
@@ -105,7 +102,7 @@ function App() {
     setError('');
 
     try {
-      const result = await GetTableData(selectedConn.ID, schema, tableName);
+      const result = await GetTableData(selectedConn.id, schema, tableName);
       setTableData(result);
     } catch (err: any) {
       setError("Failed to load table data");
@@ -118,7 +115,7 @@ function App() {
     setIsRunning(true);
     setError('');
     try {
-      const result = await ExecuteQuery(selectedConn.ID, sqlQuery);
+      const result = await ExecuteQuery(selectedConn.id, sqlQuery);
       setQueryResult(result);
       setActiveTab('query');
     } catch (err: any) {
@@ -128,7 +125,6 @@ function App() {
     }
   }, [selectedConn, sqlQuery]);
 
-  // Keyboard shortcut Cmd/Ctrl + Enter
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && activeTab === 'query') {
@@ -146,7 +142,7 @@ function App() {
     
     try {
       await DeleteConnection(id);
-      if (selectedConn?.ID === id) {
+      if (selectedConn?.id === id) {
         setSelectedConn(null);
         setTree([]);
       }
@@ -198,9 +194,9 @@ function App() {
           <div className="text-xs uppercase text-gray-500 mb-2 px-2">Connections</div>
           {connections.map((conn) => (
             <div 
-              key={conn.ID} 
+              key={conn.id} 
               onClick={() => loadDatabaseTree(conn)}
-              className={`group px-3 py-2.5 rounded-lg cursor-pointer flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800 ${selectedConn?.ID === conn.ID ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+              className={`group px-3 py-2.5 rounded-lg cursor-pointer flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800 ${selectedConn?.id === conn.id ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
             >
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Database className="w-4 h-4 text-emerald-500" />
@@ -210,7 +206,7 @@ function App() {
                 </div>
               </div>
               <button 
-                onClick={(e) => handleDeleteConnection(conn.ID, e)}
+                onClick={(e) => handleDeleteConnection(conn.id, e)}
                 className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded text-red-500"
               >
                 <Trash2 size={14} />
@@ -233,12 +229,12 @@ function App() {
                   </div>
                   {node.isOpen && node.tables.map(t => (
                     <div 
-                      key={t.Name} 
-                      onClick={() => loadTable(node.schema, t.Name)}
-                      className={`ml-6 flex items-center gap-2 px-3 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer text-sm ${selectedTable?.name === t.Name ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+                      key={t.name} 
+                      onClick={() => loadTable(node.schema, t.name)}
+                      className={`ml-6 flex items-center gap-2 px-3 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer text-sm ${selectedTable?.name === t.name ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
                     >
                       <TableIcon size={16} className="text-amber-500" />
-                      {t.Name}
+                      {t.name}
                     </div>
                   ))}
                 </div>
@@ -279,18 +275,18 @@ function App() {
                 {selectedTable && tableData ? (
                   <div>
                     <h3 className="font-medium mb-3">
-                      {selectedTable.schema}.{selectedTable.name} — {tableData.RowCount} rows
+                      {selectedTable.schema}.{selectedTable.name} — {tableData.rowCount} rows
                     </h3>
                     <table className="min-w-full border border-gray-700 dark:border-gray-700">
                       <thead className="sticky top-0 bg-gray-800 dark:bg-gray-800">
                         <tr>
-                          {tableData.Columns.map((col, i) => (
+                          {tableData.columns.map((col, i) => (
                             <th key={i} className="px-4 py-3 text-left text-sm font-medium">{col}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {tableData.Rows.map((row, ri) => (
+                        {tableData.rows.map((row, ri) => (
                           <tr key={ri} className="border-b border-gray-800 dark:border-gray-800 hover:bg-gray-800/50">
                             {row.map((cell, ci) => (
                               <td key={ci} className="px-4 py-2 text-sm font-mono">
@@ -335,18 +331,18 @@ function App() {
                 {queryResult && (
                   <div className="flex-1 overflow-auto p-4 border-t border-gray-700">
                     <h4 className="mb-2 text-sm text-gray-400">
-                      {queryResult.RowCount} rows returned
+                      {queryResult.rowCount} rows returned
                     </h4>
                     <table className="min-w-full border border-gray-700">
                       <thead className="sticky top-0 bg-gray-800">
                         <tr>
-                          {queryResult.Columns.map((col, i) => (
+                          {queryResult.columns.map((col, i) => (
                             <th key={i} className="px-4 py-3 text-left text-sm">{col}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {queryResult.Rows.map((row, ri) => (
+                        {queryResult.rows.map((row, ri) => (
                           <tr key={ri} className="border-b border-gray-800 hover:bg-gray-800/50">
                             {row.map((cell, ci) => (
                               <td key={ci} className="px-4 py-2 text-sm font-mono">

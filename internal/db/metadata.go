@@ -3,7 +3,7 @@ package db
 import (
     "context"
     "database/sql"
-    "pico/backend/internal/models"
+    "pico/internal/models"
 )
 
 func (m *Manager) GetDatabases(pool *sql.DB) ([]string, error) {

@@ -4,9 +4,9 @@ import (
     "context"
     "fmt"
 
-    "pico/backend/internal/config"
-    "pico/backend/internal/db"
-    "pico/backend/internal/models"
+    "pico/internal/config"
+    "pico/internal/db"
+    "pico/internal/models"
 )
 
 type App struct {
