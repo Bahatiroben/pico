@@ -1,51 +1,135 @@
-#app {
-    height: 100vh;
-    text-align: center;
+/* App Container */
+.dark {
+    color-scheme: dark;
 }
 
-#logo {
-    display: block;
-    width: 50%;
-    height: 50%;
-    margin: auto;
-    padding: 10% 0 0;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
-    background-origin: content-box;
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
 }
 
-.result {
-    height: 20px;
-    line-height: 20px;
-    margin: 1.5rem auto;
+::-webkit-scrollbar-track {
+    background: transparent;
 }
 
-.input-box .btn {
-    width: 60px;
-    height: 30px;
-    line-height: 30px;
-    border-radius: 3px;
-    border: none;
-    margin: 0 0 0 20px;
-    padding: 0 8px;
-    cursor: pointer;
+::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 4px;
 }
 
-.input-box .btn:hover {
-    background-image: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
-    color: #333333;
+::-webkit-scrollbar-thumb:hover {
+    background: #5a6673;
 }
 
-.input-box .input {
-    border: none;
-    border-radius: 3px;
+.dark ::-webkit-scrollbar-thumb {
+    background: #3f4754;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #4f5a6d;
+}
+
+/* Animations */
+@keyframes slideInFromBottom {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-in {
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+.slide-in-from-bottom-2 {
+    animation-name: slideInFromBottom;
+    animation-duration: 0.3s;
+    animation-timing-function: ease-out;
+}
+
+/* Tables */
+table {
+    border-collapse: collapse;
+}
+
+th {
+    white-space: nowrap;
+    background-clip: padding-box;
+}
+
+td {
+    word-break: break-word;
+}
+
+/* Inputs and Fields */
+input, textarea {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+textarea {
+    line-height: 1.5;
+    letter-spacing: 0;
+}
+
+/* Focus States */
+input:focus,
+textarea:focus {
     outline: none;
-    height: 30px;
-    line-height: 30px;
-    padding: 0 10px;
-    background-color: rgba(240, 240, 240, 1);
-    -webkit-font-smoothing: antialiased;
+}
+
+/* Code/SQL Styling */
+code, pre {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+/* Modal Styling */
+.fixed {
+    z-index: 50;
+}
+
+/* Button States */
+button:disabled {
+    cursor: not-allowed;
+}
+
+/* Selection Color */
+::selection {
+    background-color: rgba(59, 130, 246, 0.3);
+}
+
+.dark ::selection {
+    background-color: rgba(59, 130, 246, 0.5);
+}
+
+/* Connection Status Indicator */
+.connection-status {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.connection-status.active {
+    background-color: #10b981;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+}
+
+.connection-status.inactive {
+    background-color: #6b7280;
 }
 
 .input-box .input:hover {
