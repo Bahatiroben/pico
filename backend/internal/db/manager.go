@@ -108,3 +108,38 @@ func (m *Manager) GetTableData(pool *sql.DB, schema, table string, limit int) (*
     result.RowCount = len(result.Rows)
     return result, nil
 }
+
+func (m *Manager) ExecuteQuery(pool *sql.DB, query string) (*models.QueryResult, error) {
+    if query == "" {
+        return nil, fmt.Errorf("empty query")
+    }
+
+    rows, err := pool.QueryContext(context.Background(), query)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    columns := rows.Columns()
+    colCount := len(columns)
+
+    result := &models.QueryResult{
+        Columns: columns,
+        Rows:    make([][]interface{}, 0),
+    }
+
+    for rows.Next() {
+        values := make([]interface{}, colCount)
+        scanArgs := make([]interface{}, colCount)
+        for i := range values {
+            scanArgs[i] = &values[i]
+        }
+        if err := rows.Scan(scanArgs...); err != nil {
+            continue
+        }
+        result.Rows = append(result.Rows, values)
+    }
+
+    result.RowCount = len(result.Rows)
+    return result, nil
+}
