@@ -1,49 +1,42 @@
+// app.go (in project ROOT)
 package main
 
 import (
     "context"
+    "fmt"
 
     "pico/backend/internal/config"
     "pico/backend/internal/db"
     "pico/backend/internal/models"
 )
 
-// App struct
 type App struct {
-	ctx context.Context
+    ctx     context.Context
+    db      *db.Manager
+    config  *config.Store
+    conns   []models.Connection
 }
 
-// NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{}
+    return &App{
+        db:     db.NewManager(),
+        config: config.NewStore(),
+    }
 }
 
-// startup is called when the app starts. The context is saved
-// so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
-	a.ctx = ctx
+    a.ctx = ctx
+    var err error
+    a.conns, err = a.config.Load()
+    if err != nil {
+        println("Warning: Could not load connections")
+    }
 }
 
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
-}
-
-
-
-// ==================== WAILS BINDINGS ====================
+// ==================== CONNECTIONS ====================
 
 func (a *App) GetConnections() []models.Connection {
     return a.conns
-}
-
-func (a *App) SaveConnection(conn models.Connection) error {
-    if conn.ID == "" {
-        conn.ID = "conn_" + generateSimpleID() // we'll improve later
-    }
-
-    a.conns = append(a.conns, conn)
-    return a.config.Save(a.conns)
 }
 
 func (a *App) TestConnection(conn models.Connection) string {
@@ -54,7 +47,21 @@ func (a *App) TestConnection(conn models.Connection) string {
     return "success"
 }
 
-// Temporary helper - we'll replace with uuid later
-func generateSimpleID() string {
-    return "id_" + fmt.Sprintf("%d", len(a.conns)+1) // placeholder
+func (a *App) SaveConnection(conn models.Connection) error {
+    if conn.ID == "" {
+        conn.ID = fmt.Sprintf("conn_%d", len(a.conns)+1)
+    }
+
+    a.conns = append(a.conns, conn)
+    return a.config.Save(a.conns)
+}
+
+func (a *App) DeleteConnection(id string) error {
+    for i, c := range a.conns {
+        if c.ID == id {
+            a.conns = append(a.conns[:i], a.conns[i+1:]...)
+            return a.config.Save(a.conns)
+        }
+    }
+    return fmt.Errorf("connection not found")
 }
