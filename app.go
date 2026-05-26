@@ -65,3 +65,32 @@ func (a *App) DeleteConnection(id string) error {
     }
     return fmt.Errorf("connection not found")
 }
+
+// ==================== METADATA ====================
+
+func (a *App) GetDatabases(connID string) ([]string, error) {
+    // TODO: For now we'll use first connection. Improve later.
+    if len(a.conns) == 0 {
+        return nil, fmt.Errorf("no connections")
+    }
+    conn := a.conns[0] // temporary
+
+    pool, err := a.db.GetPool(conn.ID, conn)
+    if err != nil {
+        return nil, err
+    }
+    return a.db.GetDatabases(pool)
+}
+
+func (a *App) GetTables(connID, schema string) ([]models.Table, error) {
+    if len(a.conns) == 0 {
+        return nil, fmt.Errorf("no connections")
+    }
+    conn := a.conns[0] // temporary
+
+    pool, err := a.db.GetPool(conn.ID, conn)
+    if err != nil {
+        return nil, err
+    }
+    return a.db.GetTables(pool, schema)
+}
