@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"pico/backend/internal/models"
+	"github.com/Bahatiroben/pico/backend/internal/models"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
