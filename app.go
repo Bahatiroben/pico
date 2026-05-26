@@ -94,3 +94,27 @@ func (a *App) GetTables(connID, schema string) ([]models.Table, error) {
     }
     return a.db.GetTables(pool, schema)
 }
+
+func (a *App) GetSchemas(connID string) ([]string, error) {
+    if len(a.conns) == 0 {
+        return nil, fmt.Errorf("no active connection")
+    }
+    conn := a.conns[0]
+    pool, err := a.db.GetPool(conn.ID, conn)
+    if err != nil {
+        return nil, err
+    }
+    return a.db.GetSchemas(pool)
+}
+
+func (a *App) GetTableData(connID, schema, table string) (*models.QueryResult, error) {
+    if len(a.conns) == 0 {
+        return nil, fmt.Errorf("no active connection")
+    }
+    conn := a.conns[0]
+    pool, err := a.db.GetPool(conn.ID, conn)
+    if err != nil {
+        return nil, err
+    }
+    return a.db.GetTableData(pool, schema, table, 200)
+}

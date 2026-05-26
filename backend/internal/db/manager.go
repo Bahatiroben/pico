@@ -56,3 +56,55 @@ func (m *Manager) GetPool(id string, conn models.Connection) (*sql.DB, error) {
 	m.pools[id] = pool
 	return pool, nil
 }
+
+func (m *Manager) GetSchemas(pool *sql.DB) ([]string, error) {
+    rows, err := pool.QueryContext(context.Background(), `
+        SELECT schema_name 
+        FROM information_schema.schemata 
+        WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+        ORDER BY schema_name`)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var schemas []string
+    for rows.Next() {
+        var name string
+        rows.Scan(&name)
+        schemas = append(schemas, name)
+    }
+    return schemas, nil
+}
+
+func (m *Manager) GetTableData(pool *sql.DB, schema, table string, limit int) (*models.QueryResult, error) {
+    query := fmt.Sprintf(`SELECT * FROM "%s"."%s" LIMIT $1`, schema, table)
+    rows, err := pool.QueryContext(context.Background(), query, limit)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    columns := rows.Columns()
+    colCount := len(columns)
+
+    result := &models.QueryResult{
+        Columns: columns,
+        Rows:    make([][]interface{}, 0),
+    }
+
+    for rows.Next() {
+        values := make([]interface{}, colCount)
+        scanArgs := make([]interface{}, colCount)
+        for i := range values {
+            scanArgs[i] = &values[i]
+        }
+        if err := rows.Scan(scanArgs...); err != nil {
+            continue
+        }
+        result.Rows = append(result.Rows, values)
+    }
+
+    result.RowCount = len(result.Rows)
+    return result, nil
+}
