@@ -1,4 +1,3 @@
-// app.go (in project ROOT)
 package main
 
 import (

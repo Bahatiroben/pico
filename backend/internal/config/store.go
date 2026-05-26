@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Bahatiroben/pico/backend/internal/models"
+	"pico/backend/internal/models"
 )
 
 type Store struct {

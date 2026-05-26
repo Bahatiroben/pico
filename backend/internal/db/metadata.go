@@ -25,25 +25,6 @@ func (m *Manager) GetDatabases(pool *sql.DB) ([]string, error) {
     return dbs, nil
 }
 
-func (m *Manager) GetSchemas(pool *sql.DB) ([]string, error) {
-    rows, err := pool.QueryContext(context.Background(), `
-        SELECT schema_name 
-        FROM information_schema.schemata 
-        WHERE schema_name NOT IN ('information_schema', 'pg_catalog')
-        ORDER BY schema_name`)
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
-
-    var schemas []string
-    for rows.Next() {
-        var name string
-        rows.Scan(&name)
-        schemas = append(schemas, name)
-    }
-    return schemas, nil
-}
 
 func (m *Manager) GetTables(pool *sql.DB, schema string) ([]models.Table, error) {
     query := `

@@ -1,4 +1,4 @@
-module github.com/Bahatiroben/pico
+module pico
 
 go 1.25.0
 
@@ -41,5 +41,3 @@ require (
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 )
-
-// replace github.com/wailsapp/wails/v2 v2.12.0 => /Users/robben/go/pkg/mod

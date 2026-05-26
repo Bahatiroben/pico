@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/Bahatiroben/pico/backend/internal/models"
+	"pico/backend/internal/models"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -85,7 +85,10 @@ func (m *Manager) GetTableData(pool *sql.DB, schema, table string, limit int) (*
     }
     defer rows.Close()
 
-    columns := rows.Columns()
+    columns, err := rows.Columns()
+    if err != nil {
+        return nil, err
+    }
     colCount := len(columns)
 
     result := &models.QueryResult{
@@ -120,7 +123,10 @@ func (m *Manager) ExecuteQuery(pool *sql.DB, query string) (*models.QueryResult,
     }
     defer rows.Close()
 
-    columns := rows.Columns()
+    columns, err := rows.Columns()
+    if err != nil {
+        return nil, err
+    }
     colCount := len(columns)
 
     result := &models.QueryResult{
