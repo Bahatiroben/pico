@@ -3,21 +3,34 @@ import type { Theme } from '../types';
 
 interface ConnectionDetailsPanelProps {
   connection: models.Connection;
+  editingConn: Partial<models.Connection> | null;
+  isEditing: boolean;
   theme: Theme;
   onDone: () => void;
   onConnect: () => void;
+  onEdit: () => void;
+  onSave: () => void;
+  onCancel: () => void;
+  onEditingConnChange: (conn: Partial<models.Connection>) => void;
   selectedColor: string;
   onColorChange: (color: string) => void;
 }
 
 export function ConnectionDetailsPanel({
   connection,
+  editingConn,
+  isEditing,
   theme,
   onDone,
   onConnect,
+  onEdit,
+  onSave,
+  onCancel,
+  onEditingConnChange,
   selectedColor,
   onColorChange,
 }: ConnectionDetailsPanelProps) {
+  const displayConn = isEditing ? editingConn : connection;
   const colors = [
     'gray',
     'red',
@@ -46,7 +59,19 @@ export function ConnectionDetailsPanel({
       <div className="max-w-2xl mx-auto p-8">
         {/* Connection Name with Edit Button */}
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold">{connection.name}</h2>
+          <h2 className="text-2xl font-bold">{displayConn?.name}</h2>
+          {!isEditing && (
+            <button
+              onClick={onEdit}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                theme === 'dark'
+                  ? 'bg-blue-600 hover:bg-blue-500'
+                  : 'bg-blue-500 hover:bg-blue-600'
+              } text-white`}
+            >
+              Edit
+            </button>
+          )}
         </div>
 
         {/* Nickname Field */}
@@ -62,16 +87,31 @@ export function ConnectionDetailsPanel({
           >
             Nickname
           </label>
-          <input
-            type="text"
-            value={connection.name}
-            disabled
-            className={`w-full px-4 py-2 rounded-lg text-sm ${
-              theme === 'dark'
-                ? 'bg-gray-800 border border-gray-700 text-gray-200'
-                : 'bg-gray-50 border border-gray-300'
-            } disabled:opacity-60`}
-          />
+          {isEditing ? (
+            <input
+              type="text"
+              value={displayConn?.name || ''}
+              onChange={(e) =>
+                onEditingConnChange({ ...editingConn, name: e.target.value })
+              }
+              className={`w-full px-4 py-2 rounded-lg text-sm border ${
+                theme === 'dark'
+                  ? 'bg-gray-800 border-gray-600 text-gray-200'
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            />
+          ) : (
+            <input
+              type="text"
+              value={displayConn?.name || ''}
+              disabled
+              className={`w-full px-4 py-2 rounded-lg text-sm ${
+                theme === 'dark'
+                  ? 'bg-gray-800 border border-gray-700 text-gray-200'
+                  : 'bg-gray-50 border border-gray-300'
+              } disabled:opacity-60`}
+            />
+          )}
         </div>
 
         {/* Color Picker */}

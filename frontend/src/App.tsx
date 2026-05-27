@@ -31,6 +31,8 @@ function App() {
   );
   const [showNewConnModal, setShowNewConnModal] = useState(false);
   const [showConnDetails, setShowConnDetails] = useState(false);
+  const [isEditingConn, setIsEditingConn] = useState(false);
+  const [editingConn, setEditingConn] = useState<Partial<models.Connection> | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [connLoading, setConnLoading] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string>('gray');
@@ -120,8 +122,8 @@ function App() {
       setTree(treeData);
       showToast(`Connected to ${conn.name}`, 'success');
     } catch (err: any) {
-      setError('Failed to load database structure');
-      showToast('Failed to load database structure', 'error');
+      setError('Failed to load database structure: ');
+      showToast('Failed to load database structure: ' + err, 'error');
       setIsConnected(false);
     } finally {
       setConnLoading(false);
@@ -146,7 +148,7 @@ function App() {
       const result = await GetTableData(selectedConn.id, schema, tableName);
       setTableData(result);
     } catch (err: any) {
-      setError('Failed to load table data');
+      setError('Failed to load table data: ');
       showToast('Failed to load table data', 'error');
     }
   };
@@ -188,8 +190,6 @@ function App() {
     e: React.MouseEvent
   ) => {
     e.stopPropagation();
-    if (!confirm('Delete this connection?')) return;
-
     try {
       await DeleteConnection(id);
       if (selectedConn?.id === id) {
@@ -222,6 +222,7 @@ function App() {
       return;
     }
     try {
+
       await SaveConnection(newConn as models.Connection);
       setShowNewConnModal(false);
       loadConnections();
@@ -236,6 +237,30 @@ function App() {
       showToast('Connection saved', 'success');
     } catch (err) {
       showToast('Failed to save connection', 'error');
+    }
+  };
+
+  const handleEditConnection = () => {
+    if (selectedConn) {
+      setEditingConn({ ...selectedConn });
+      setIsEditingConn(true);
+    }
+  };
+
+  const handleUpdateConnection = async () => {
+    if (!editingConn?.name || !editingConn?.host || !editingConn?.user) {
+      showToast('Please fill in all required fields', 'error');
+      return;
+    }
+    try {
+      await SaveConnection(editingConn as models.Connection);
+      setIsEditingConn(false);
+      setEditingConn(null);
+      loadConnections();
+      setSelectedConn(editingConn as models.Connection);
+      showToast('Connection updated', 'success');
+    } catch (err) {
+      showToast('Failed to update connection', 'error');
     }
   };
 
@@ -281,9 +306,23 @@ function App() {
         {selectedConn && !isConnected ? (
           <ConnectionDetailsPanel
             connection={selectedConn}
+            editingConn={editingConn}
+            isEditing={isEditingConn}
             theme={theme}
-            onDone={() => setSelectedConn(null)}
+            onDone={() => {
+              setSelectedConn(null);
+              setIsEditingConn(false);
+              setEditingConn(null);
+              handleSaveConnection()
+            }}
             onConnect={() => loadDatabaseTree(selectedConn)}
+            onEdit={handleEditConnection}
+            onSave={handleUpdateConnection}
+            onCancel={() => {
+              setIsEditingConn(false);
+              setEditingConn(null);
+            }}
+            onEditingConnChange={setEditingConn}
             selectedColor={selectedColor}
             onColorChange={setSelectedColor}
           />
