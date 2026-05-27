@@ -22,6 +22,7 @@ export function ConnectionList({
   onNewConnection,
   onEditConnection,
   onConnect,
+  onDeleteConnection,
   onToggleTheme,
 }: ConnectionListProps) {
   return (
@@ -123,6 +124,17 @@ export function ConnectionList({
                     className="flex-1 py-1.5 px-3 text-xs font-medium rounded bg-blue-600 hover:bg-blue-500 text-white transition-colors"
                   >
                     Connect
+                  </button>
+                  <button
+                    onClick={(e) => onDeleteConnection(conn.id, e)}
+                    className={`py-1.5 px-2 text-xs font-medium rounded transition-colors ${
+                      theme === 'dark'
+                        ? 'bg-red-900/30 hover:bg-red-900/50 text-red-400'
+                        : 'bg-red-100 hover:bg-red-200 text-red-600'
+                    }`}
+                    title="Delete connection"
+                  >
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>

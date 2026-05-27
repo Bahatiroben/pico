@@ -268,6 +268,7 @@ function App() {
           setIsConnected(false);
         }}
         onConnect={loadDatabaseTree}
+        onDeleteConnection={handleDeleteConnection}
         onToggleTheme={toggleTheme}
       />
 
