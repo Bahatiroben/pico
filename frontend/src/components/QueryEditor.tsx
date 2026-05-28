@@ -1,4 +1,8 @@
 import { Play, Loader, AlertCircle } from 'lucide-react';
+import CodeMirror from '@uiw/react-codemirror';
+import { sql } from '@codemirror/lang-sql';
+import { oneDark } from '@codemirror/theme-one-dark';
+
 import type { models } from '../../wailsjs/go/models';
 import type { Theme } from '../types';
 
@@ -22,9 +26,11 @@ export function QueryEditor({
   queryResult,
 }: QueryEditorProps) {
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col w-full min-w-0 overflow-hidden">
+      
+      {/* Toolbar */}
       <div
-        className={`p-4 border-b flex items-center gap-3 ${
+        className={`p-4 border-b flex items-center gap-3 shrink-0 ${
           theme === 'dark'
             ? 'border-gray-700 bg-gray-950'
             : 'border-gray-200 bg-gray-100'
@@ -44,13 +50,15 @@ export function QueryEditor({
           ) : (
             <Play size={16} />
           )}
+
           {isRunning ? 'Running...' : 'Execute'}
         </button>
       </div>
 
+      {/* Error */}
       {error && (
         <div
-          className={`flex items-center gap-2 px-4 py-3 text-sm ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm shrink-0 ${
             theme === 'dark'
               ? 'bg-red-900/30 text-red-300'
               : 'bg-red-100 text-red-700'
@@ -61,45 +69,74 @@ export function QueryEditor({
         </div>
       )}
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <textarea
-          value={sqlQuery}
-          onChange={(e) => onQueryChange(e.target.value)}
-          className={`flex-1 p-4 font-mono text-sm resize-none focus:outline-none border-b ${
-            theme === 'dark'
-              ? 'bg-gray-900 text-gray-200 border-gray-700'
-              : 'bg-white text-gray-900 border-gray-200'
-          }`}
-          placeholder="SELECT * FROM users LIMIT 100;"
-        />
+      {/* Editor + Results */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
 
+        {/* SQL Editor */}
+        <div
+          className={`border-b overflow-hidden ${
+            theme === 'dark'
+              ? 'border-gray-700'
+              : 'border-gray-200'
+          }`}
+        >
+          <CodeMirror
+            value={sqlQuery}
+            height="250px"
+            extensions={[sql()]}
+            theme={theme === 'dark' ? oneDark : 'light'}
+            onChange={(value) => onQueryChange(value)}
+            basicSetup={{
+              lineNumbers: true,
+              foldGutter: true,
+              dropCursor: true,
+              allowMultipleSelections: true,
+              indentOnInput: true,
+              bracketMatching: true,
+              closeBrackets: true,
+              autocompletion: true,
+              highlightSelectionMatches: true,
+            }}
+            className="text-sm font-mono"
+          />
+        </div>
+
+        {/* Query Results */}
         {queryResult && (
           <div
-            className={`flex-1 overflow-auto border-t ${
-              theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+            className={`flex-1 min-h-0 overflow-auto ${
+              theme === 'dark'
+                ? 'border-gray-700'
+                : 'border-gray-200'
             }`}
           >
+            {/* Result Count */}
             <div
-              className={`p-4 border-b text-sm ${
+              className={`p-4 border-b text-sm sticky top-0 z-10 ${
                 theme === 'dark'
-                  ? 'border-gray-700 text-gray-400'
-                  : 'border-gray-200 text-gray-600'
+                  ? 'border-gray-700 text-gray-400 bg-gray-900'
+                  : 'border-gray-200 text-gray-600 bg-white'
               }`}
             >
               {queryResult.rowCount} rows
             </div>
+
+            {/* Table */}
             <div className="overflow-auto">
               <table className="min-w-full border-collapse text-sm">
+                
                 <thead
-                  className={`sticky top-0 ${
-                    theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'
+                  className={`sticky top-[53px] z-10 ${
+                    theme === 'dark'
+                      ? 'bg-gray-800'
+                      : 'bg-gray-100'
                   }`}
                 >
                   <tr>
                     {queryResult.columns.map((col, i) => (
                       <th
                         key={i}
-                        className={`px-4 py-3 text-left font-semibold border-r ${
+                        className={`px-4 py-3 text-left font-semibold border-r whitespace-nowrap ${
                           theme === 'dark'
                             ? 'border-gray-700'
                             : 'border-gray-200'
@@ -110,6 +147,7 @@ export function QueryEditor({
                     ))}
                   </tr>
                 </thead>
+
                 <tbody>
                   {queryResult.rows.map((row, ri) => (
                     <tr
@@ -123,7 +161,7 @@ export function QueryEditor({
                       {row.map((cell, ci) => (
                         <td
                           key={ci}
-                          className={`px-4 py-2 font-mono border-r ${
+                          className={`px-4 py-2 font-mono border-r whitespace-nowrap ${
                             theme === 'dark'
                               ? 'border-gray-800'
                               : 'border-gray-100'
@@ -147,6 +185,7 @@ export function QueryEditor({
                     </tr>
                   ))}
                 </tbody>
+
               </table>
             </div>
           </div>
