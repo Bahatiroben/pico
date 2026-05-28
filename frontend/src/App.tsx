@@ -11,24 +11,23 @@ import {
 } from '../wailsjs/go/main/App';
 import type { models } from '../wailsjs/go/models';
 import type { ViewTab, Theme, TreeNode, Toast } from './types';
+
 import {
   ToastNotifications,
   ConnectionModal,
   ConnectionList,
   ConnectionDetailsPanel,
   DatabaseTree,
-  ViewTabs,
   QueryEditor,
   TablePreview,
   EmptyState,
 } from './components';
 
+
 function App() {
   const [theme, setTheme] = useState<Theme>('dark');
   const [connections, setConnections] = useState<models.Connection[]>([]);
-  const [selectedConn, setSelectedConn] = useState<models.Connection | null>(
-    null
-  );
+  const [selectedConn, setSelectedConn] = useState<models.Connection | null>(null);
   const [showNewConnModal, setShowNewConnModal] = useState(false);
   const [showConnDetails, setShowConnDetails] = useState(false);
   const [isEditingConn, setIsEditingConn] = useState(false);
@@ -36,7 +35,6 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [connLoading, setConnLoading] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string>('gray');
-
   const [newConn, setNewConn] = useState<Partial<models.Connection>>({
     name: '',
     host: 'localhost',
@@ -45,21 +43,19 @@ function App() {
     password: '',
     database: 'postgres',
   });
-
   const [tree, setTree] = useState<TreeNode[]>([]);
-  const [selectedTable, setSelectedTable] = useState<
-    { schema: string; name: string } | null
-  >(null);
+  const [selectedTable, setSelectedTable] = useState<{ schema: string; name: string } | null>(null);
   const [tableData, setTableData] = useState<models.QueryResult | null>(null);
-
-  const [activeTab, setActiveTab] = useState<ViewTab>('query');
   const [sqlQuery, setSqlQuery] = useState('SELECT * FROM ');
-  const [queryResult, setQueryResult] = useState<models.QueryResult | null>(
-    null
-  );
+  const [queryResult, setQueryResult] = useState<models.QueryResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string>('');
   const [toasts, setToasts] = useState<Toast[]>([]);
+
+  // New state for app view: 'connect', 'grid', 'table', 'query'
+  const [appView, setAppView] = useState<'connect' | 'table' | 'query'>('connect');
+  // Sidebar toggle for table list
+  const [showSidebar, setShowSidebar] = useState<boolean>(true);
 
   // Theme
   useEffect(() => {
@@ -102,22 +98,24 @@ function App() {
     }
   };
 
+
+  // Load all schemas/tables for the grid
   const loadDatabaseTree = async (conn: models.Connection) => {
     setConnLoading(true);
     setSelectedConn(conn);
     setTree([]);
-    setSelectedTable(null);
+    setSelectedTable(null); // No table selected on load
     setTableData(null);
     setQueryResult(null);
     setError('');
     setIsConnected(true);
-
+    setAppView('table'); // Default to table view, but no table selected
     try {
       const schemas = await GetSchemas(conn.id);
       const treeData: TreeNode[] = [];
       for (const schema of schemas) {
         const tables = await GetTables(conn.id, schema);
-        treeData.push({ schema, tables, isOpen: schema === 'public' });
+        treeData.push({ schema, tables, isOpen: true });
       }
       setTree(treeData);
       showToast(`Connected to ${conn.name}`, 'success');
@@ -138,12 +136,13 @@ function App() {
     );
   };
 
+
+  // Load a single table for full-screen view
   const loadTable = async (schema: string, tableName: string) => {
     if (!selectedConn) return;
     setSelectedTable({ schema, name: tableName });
-    setActiveTab('table');
+    setAppView('table');
     setError('');
-
     try {
       const result = await GetTableData(selectedConn.id, schema, tableName);
       setTableData(result);
@@ -153,18 +152,18 @@ function App() {
     }
   };
 
+
+  // Run query, then refetch tables when returning to grid
   const runQuery = useCallback(async () => {
     if (!selectedConn || !sqlQuery.trim()) {
       showToast('Please enter a query', 'info');
       return;
     }
-
     setIsRunning(true);
     setError('');
     try {
       const result = await ExecuteQuery(selectedConn.id, sqlQuery);
       setQueryResult(result);
-      setActiveTab('query');
       showToast(`Query executed: ${result.rowCount} rows`, 'success');
     } catch (err: any) {
       setError(err.message || 'Query execution failed');
@@ -184,6 +183,21 @@ function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [runQuery]);
+
+  // Intercept window close/unload and navigate back to connections list instead
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (appView !== 'connect') {
+        // Prevent the window from closing and navigate back to connections
+        e.preventDefault();
+        // Chrome requires returnValue to be set
+        e.returnValue = '';
+        setAppView('connect');
+      }
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [appView]);
 
   const handleDeleteConnection = async (
     id: string,
@@ -264,142 +278,174 @@ function App() {
     }
   };
 
+
+  // --- Main Render ---
   return (
     <div
       className={`flex h-screen overflow-hidden ${
-        theme === 'dark'
-          ? 'bg-gray-900 text-gray-200'
-          : 'bg-white text-gray-900'
+        theme === 'dark' ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-900'
       }`}
     >
-      {/* Left Sidebar - Connections (Postico-style compact) */}
-      <ConnectionList
-        theme={theme}
-        connections={connections}
-        selectedConn={selectedConn}
-        expandedConn={showConnDetails ? selectedConn : null}
-        editingConn={editingConn}
-        isEditingConn={isEditingConn}
-        selectedColor={selectedColor}
-        isConnected={isConnected}
-        onSelectConnection={(conn) => {
-          setSelectedConn(conn);
-          setIsConnected(false);
-          setShowConnDetails(!showConnDetails && selectedConn?.id === conn.id ? false : true);
-        }}
-        onNewConnection={() => {
-          setShowNewConnModal(true);
-          setSelectedConn(null);
-          setIsConnected(false);
-          setShowConnDetails(false);
-        }}
-        onConnect={loadDatabaseTree}
-        onDeleteConnection={handleDeleteConnection}
-        onToggleTheme={toggleTheme}
-        onEdit={handleEditConnection}
-        onSave={handleUpdateConnection}
-        onCancel={() => {
-          setIsEditingConn(false);
-          setEditingConn(null);
-        }}
-        onEditingConnChange={setEditingConn}
-        onColorChange={setSelectedColor}
-      />
+      {/* Show connection list only if not connected */}
+      {appView === 'connect' && (
+        <ConnectionList
+          theme={theme}
+          connections={connections}
+          selectedConn={selectedConn}
+          expandedConn={showConnDetails ? selectedConn : null}
+          editingConn={editingConn}
+          isEditingConn={isEditingConn}
+          selectedColor={selectedColor}
+          isConnected={isConnected}
+          onSelectConnection={(conn) => {
+            setSelectedConn(conn);
+            setIsConnected(false);
+            setShowConnDetails(!showConnDetails && selectedConn?.id === conn.id ? false : true);
+          }}
+          onNewConnection={() => {
+            setShowNewConnModal(true);
+            setSelectedConn(null);
+            setIsConnected(false);
+            setShowConnDetails(false);
+          }}
+          onConnect={loadDatabaseTree}
+          onDeleteConnection={handleDeleteConnection}
+          onToggleTheme={toggleTheme}
+          onEdit={handleEditConnection}
+          onSave={handleUpdateConnection}
+          onCancel={() => {
+            setIsEditingConn(false);
+            setEditingConn(null);
+          }}
+          onEditingConnChange={setEditingConn}
+          onColorChange={setSelectedColor}
+        />
+      )}
 
-      {/* Main Area */}
-      <div
-        className={`flex-1 flex flex-col overflow-hidden ${
-          theme === 'dark' ? 'bg-gray-950' : 'bg-gray-50'
-        }`}
-      >
-        {isConnected && selectedConn ? (
-          <>
-            {/* Header with connection name and tabs */}
-            <div
-              className={`border-b ${
-                theme === 'dark'
-                  ? 'border-gray-700 bg-gray-900'
-                  : 'border-gray-200 bg-white'
-              }`}
-            >
-              <div
-                className={`px-6 py-4 flex items-center justify-between ${
-                  theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-                }`}
-              >
-                <h2 className="text-lg font-semibold">{selectedConn.name}</h2>
+      {/* Main Area: table, query */}
+      {appView !== 'connect' && (
+        <div className="flex-1 flex flex-row overflow-hidden">
+          {/* Sidebar: List of tables, toggleable */}
+          {showSidebar && (
+            <div className="w-56 border-r border-gray-800 bg-gray-900 flex flex-col">
+              <div className="flex items-center justify-between px-4 py-2 border-b border-gray-800">
+                <span className="font-semibold text-xs text-gray-400">Tables</span>
+                <button
+                  onClick={() => setShowSidebar(false)}
+                  className="text-xs text-gray-400 hover:text-gray-200"
+                >
+                  Hide
+                </button>
+              </div>
+              <div className="flex-1 overflow-auto">
+                {tree.flatMap((node) =>
+                  node.tables.map((t) => (
+                    <button
+                      key={node.schema + '.' + t.name}
+                      onClick={() => loadTable(node.schema, t.name)}
+                      className={`w-full text-left px-4 py-2 text-sm truncate ${selectedTable?.name === t.name ? 'bg-amber-900/40 text-amber-200' : 'hover:bg-gray-800 text-gray-300'}`}
+                    >
+                      {t.name}
+                    </button>
+                  ))
+                )}
+              </div>
+              <div className="p-2 border-t border-gray-800">
+                <button
+                  onClick={async () => {
+                    if (selectedConn) await loadDatabaseTree(selectedConn);
+                  }}
+                  className="w-full px-2 py-1 text-xs rounded bg-amber-600 hover:bg-amber-500 text-white"
+                >
+                  Refresh
+                </button>
+                <button
+                  onClick={() => setAppView('query')}
+                  className="w-full mt-2 px-2 py-1 text-xs rounded bg-blue-600 hover:bg-blue-500 text-white"
+                >
+                  Query Editor
+                </button>
                 <button
                   onClick={() => {
                     setIsConnected(false);
                     setSelectedConn(null);
                     setTree([]);
+                    setAppView('connect');
                   }}
-                  className={`px-3 py-1 text-sm rounded transition-colors ${
-                    theme === 'dark'
-                      ? 'bg-gray-800 hover:bg-gray-700 text-gray-300'
-                      : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-                  }`}
+                  className="w-full mt-2 px-2 py-1 text-xs rounded bg-gray-800 hover:bg-gray-700 text-gray-300"
                 >
                   Disconnect
                 </button>
               </div>
-              <ViewTabs
-                activeTab={activeTab}
-                theme={theme}
-                onTabChange={setActiveTab}
-                onDisconnect={() => {
-                  setIsConnected(false);
-                  setSelectedConn(null);
-                  setTree([]);
-                }}
-              />
             </div>
-
-            {/* Main content with sidebar and panel */}
-            <div className="flex flex-1 overflow-hidden">
-              {/* Table list sidebar */}
-              {tree.length > 0 && (
-                <DatabaseTree
-                  tree={tree}
-                  selectedTableName={selectedTable?.name || null}
-                  theme={theme}
-                  onToggleSchema={toggleSchema}
-                  onSelectTable={loadTable}
-                />
-              )}
-
-              {/* Content area */}
-              <div className="flex-1 overflow-auto">
-                {activeTab === 'query' && (
-                  <QueryEditor
-                    theme={theme}
-                    sqlQuery={sqlQuery}
-                    onQueryChange={setSqlQuery}
-                    isRunning={isRunning}
-                    onRunQuery={runQuery}
-                    error={error}
-                    queryResult={queryResult}
-                  />
+          )}
+          {/* Main content: Table or Query */}
+          <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900">
+              <div className="flex-none">
+                {appView === 'table' && selectedTable && (
+                  <span className="font-semibold text-base text-gray-200">{selectedTable.name}</span>
                 )}
-
-                {activeTab === 'table' && (
+                {appView === 'query' && (
+                  <span className="font-semibold text-base text-gray-200">Query Editor</span>
+                )}
+              </div>
+              <div className="flex-none">
+                {appView === 'table' && (
+                  <button
+                    onClick={() => setAppView('query')}
+                    className="px-3 py-1 text-sm rounded bg-blue-600 hover:bg-blue-500 text-white"
+                  >
+                    Query Editor
+                  </button>
+                )}
+                {appView === 'query' && (
+                  <button
+                    onClick={() => setAppView('table')}
+                    className="px-3 py-1 text-sm rounded bg-gray-800 hover:bg-gray-700 text-gray-300"
+                  >
+                    Back to Tables
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="flex-1 min-w-0 min-h-0">
+              {/* Table Preview */}
+              {appView === 'table' && selectedTable && (
+                <div className="w-full h-full overflow-auto">
                   <TablePreview
                     theme={theme}
                     selectedTable={selectedTable}
                     tableData={tableData}
                   />
-                )}
-
-                {activeTab === 'query' && !selectedTable && (
-                  <EmptyState theme={theme} />
-                )}
-              </div>
+                </div>
+              )}
+              {/* Query Editor */}
+              {appView === 'query' && (
+                <div className="w-full h-full overflow-auto">
+                  <QueryEditor
+                    theme={theme}
+                    sqlQuery={sqlQuery}
+                    onQueryChange={setSqlQuery}
+                    isRunning={isRunning}
+                    onRunQuery={async () => {
+                      await runQuery();
+                    }}
+                    error={error}
+                    queryResult={queryResult}
+                  />
+                </div>
+              )}
+              {/* Empty state if no table selected */}
+              {appView === 'table' && !selectedTable && (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-gray-500 text-lg">Select a table from the sidebar</span>
+                </div>
+              )}
             </div>
-          </>
-        ) : (
-          <EmptyState theme={theme} />
-        )}
-      </div>
+          </div>
+        </div>
+      )}
 
       {/* Connection Modal */}
       <ConnectionModal
