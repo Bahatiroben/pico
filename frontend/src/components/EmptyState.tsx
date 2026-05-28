@@ -1,4 +1,4 @@
-import { Database } from 'lucide-react';
+import { Database, Zap } from 'lucide-react';
 import type { Theme } from '../types';
 
 interface EmptyStateProps {
@@ -9,24 +9,38 @@ export function EmptyState({ theme }: EmptyStateProps) {
   return (
     <div
       className={`flex-1 flex flex-col items-center justify-center ${
-        theme === 'dark' ? 'bg-gray-900' : 'bg-white'
+        theme === 'dark' ? 'bg-gray-950' : 'bg-gray-50'
       }`}
     >
       <Database
-        className={`w-16 h-16 mb-4 ${
+        className={`w-12 h-12 mb-4 ${
           theme === 'dark' ? 'text-gray-700' : 'text-gray-300'
         }`}
       />
       <p
-        className={`text-lg font-medium mb-2 ${
-          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+        className={`text-lg font-semibold mb-2 ${
+          theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
         }`}
       >
-        No connection selected
+        Ready to query
       </p>
-      <p className={theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}>
-        Select a connection from the list to get started
+      <p
+        className={`text-sm mb-6 ${
+          theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
+        }`}
+      >
+        Select a table or write a query to get started
       </p>
+      <div
+        className={`px-4 py-2 rounded text-xs font-medium flex items-center gap-2 ${
+          theme === 'dark'
+            ? 'bg-gray-800 text-gray-400'
+            : 'bg-gray-200 text-gray-600'
+        }`}
+      >
+        <Zap size={14} />
+        Cmd+Enter to execute
+      </div>
     </div>
   );
 }

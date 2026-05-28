@@ -272,102 +272,129 @@ function App() {
           : 'bg-white text-gray-900'
       }`}
     >
-      {/* Left Sidebar - Connections List */}
+      {/* Left Sidebar - Connections (Postico-style compact) */}
       <ConnectionList
         theme={theme}
         connections={connections}
         selectedConn={selectedConn}
+        expandedConn={showConnDetails ? selectedConn : null}
+        editingConn={editingConn}
+        isEditingConn={isEditingConn}
+        selectedColor={selectedColor}
+        isConnected={isConnected}
         onSelectConnection={(conn) => {
           setSelectedConn(conn);
           setIsConnected(false);
-          setShowConnDetails(false);
+          setShowConnDetails(!showConnDetails && selectedConn?.id === conn.id ? false : true);
         }}
         onNewConnection={() => {
           setShowNewConnModal(true);
           setSelectedConn(null);
           setIsConnected(false);
-        }}
-        onEditConnection={(conn) => {
-          setSelectedConn(conn);
-          setShowConnDetails(true);
-          setIsConnected(false);
+          setShowConnDetails(false);
         }}
         onConnect={loadDatabaseTree}
         onDeleteConnection={handleDeleteConnection}
         onToggleTheme={toggleTheme}
+        onEdit={handleEditConnection}
+        onSave={handleUpdateConnection}
+        onCancel={() => {
+          setIsEditingConn(false);
+          setEditingConn(null);
+        }}
+        onEditingConnChange={setEditingConn}
+        onColorChange={setSelectedColor}
       />
 
       {/* Main Area */}
       <div
         className={`flex-1 flex flex-col overflow-hidden ${
-          theme === 'dark' ? 'bg-gray-900' : 'bg-white'
+          theme === 'dark' ? 'bg-gray-950' : 'bg-gray-50'
         }`}
       >
-        {selectedConn && !isConnected ? (
-          <ConnectionDetailsPanel
-            connection={selectedConn}
-            editingConn={editingConn}
-            isEditing={isEditingConn}
-            theme={theme}
-            onDone={() => {
-              setSelectedConn(null);
-              setIsEditingConn(false);
-              setEditingConn(null);
-              handleSaveConnection()
-            }}
-            onConnect={() => loadDatabaseTree(selectedConn)}
-            onEdit={handleEditConnection}
-            onSave={handleUpdateConnection}
-            onCancel={() => {
-              setIsEditingConn(false);
-              setEditingConn(null);
-            }}
-            onEditingConnChange={setEditingConn}
-            selectedColor={selectedColor}
-            onColorChange={setSelectedColor}
-          />
-        ) : isConnected && selectedConn ? (
+        {isConnected && selectedConn ? (
           <>
-            <ViewTabs
-              activeTab={activeTab}
-              theme={theme}
-              onTabChange={setActiveTab}
-              onDisconnect={() => {
-                setIsConnected(false);
-                setSelectedConn(null);
-                setTree([]);
-              }}
-            />
-
-            {activeTab === 'query' && (
-              <QueryEditor
+            {/* Header with connection name and tabs */}
+            <div
+              className={`border-b ${
+                theme === 'dark'
+                  ? 'border-gray-700 bg-gray-900'
+                  : 'border-gray-200 bg-white'
+              }`}
+            >
+              <div
+                className={`px-6 py-4 flex items-center justify-between ${
+                  theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+                }`}
+              >
+                <h2 className="text-lg font-semibold">{selectedConn.name}</h2>
+                <button
+                  onClick={() => {
+                    setIsConnected(false);
+                    setSelectedConn(null);
+                    setTree([]);
+                  }}
+                  className={`px-3 py-1 text-sm rounded transition-colors ${
+                    theme === 'dark'
+                      ? 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                  }`}
+                >
+                  Disconnect
+                </button>
+              </div>
+              <ViewTabs
+                activeTab={activeTab}
                 theme={theme}
-                sqlQuery={sqlQuery}
-                onQueryChange={setSqlQuery}
-                isRunning={isRunning}
-                onRunQuery={runQuery}
-                error={error}
-                queryResult={queryResult}
+                onTabChange={setActiveTab}
+                onDisconnect={() => {
+                  setIsConnected(false);
+                  setSelectedConn(null);
+                  setTree([]);
+                }}
               />
-            )}
+            </div>
 
-            {activeTab === 'table' && (
-              <TablePreview
-                theme={theme}
-                selectedTable={selectedTable}
-                tableData={tableData}
-              />
-            )}
+            {/* Main content with sidebar and panel */}
+            <div className="flex flex-1 overflow-hidden">
+              {/* Table list sidebar */}
+              {tree.length > 0 && (
+                <DatabaseTree
+                  tree={tree}
+                  selectedTableName={selectedTable?.name || null}
+                  theme={theme}
+                  onToggleSchema={toggleSchema}
+                  onSelectTable={loadTable}
+                />
+              )}
 
-            {tree.length > 0 && (
-              <DatabaseTree
-                tree={tree}
-                selectedTableName={selectedTable?.name || null}
-                theme={theme}
-                onToggleSchema={toggleSchema}
-                onSelectTable={loadTable}
-              />
-            )}
+              {/* Content area */}
+              <div className="flex-1 overflow-auto">
+                {activeTab === 'query' && (
+                  <QueryEditor
+                    theme={theme}
+                    sqlQuery={sqlQuery}
+                    onQueryChange={setSqlQuery}
+                    isRunning={isRunning}
+                    onRunQuery={runQuery}
+                    error={error}
+                    queryResult={queryResult}
+                  />
+                )}
+
+                {activeTab === 'table' && (
+                  <TablePreview
+                    theme={theme}
+                    selectedTable={selectedTable}
+                    tableData={tableData}
+                  />
+                )}
+
+                {activeTab === 'query' && !selectedTable && (
+                  <EmptyState theme={theme} />
+                )}
+              </div>
+            </div>
           </>
         ) : (
           <EmptyState theme={theme} />
