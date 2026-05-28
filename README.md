@@ -9,6 +9,14 @@ here: https://wails.io/docs/reference/project-config
 
 ## Live Development
 
+### Pre-requisites
+
+- MacOs
+
+- Running Postgresql on PORT=`5432`
+
+- go `v1.25.0` or later
+
 To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
 server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
 and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect

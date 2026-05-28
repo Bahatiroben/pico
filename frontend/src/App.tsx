@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   GetConnections,
   TestConnection,
@@ -336,7 +337,6 @@ function App() {
   {/* MAIN APP */}
   {appView !== 'connect' && (
     <div className="flex flex-1 w-full h-full min-w-0 overflow-hidden">
-      
       {/* SIDEBAR */}
       {showSidebar && (
         <div className="w-56 shrink-0 border-r border-gray-800 bg-gray-900 flex flex-col">
@@ -345,12 +345,7 @@ function App() {
               Tables
             </span>
 
-            <button
-              onClick={() => setShowSidebar(false)}
-              className="text-xs text-gray-400 hover:text-gray-200"
-            >
-              Hide
-            </button>
+            <ChevronLeft onClick={() => setShowSidebar(false)} size={20} className="flex-shrink-0"/>
           </div>
 
           <div className="flex-1 overflow-auto">
@@ -412,13 +407,10 @@ function App() {
         {/* HEADER */}
         <div className="w-full flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900">
           
+                            {
+              !showSidebar && <ChevronRight onClick={() => setShowSidebar(true)} size={20} className="flex-shrink-0"/>
+            }
           <div className="min-w-0 truncate">
-            {appView === 'table' && selectedTable && (
-              <span className="font-semibold text-base text-gray-200">
-                {selectedTable.name}
-              </span>
-            )}
-
             {appView === 'query' && (
               <span className="font-semibold text-base text-gray-200">
                 Query Editor
