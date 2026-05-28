@@ -281,186 +281,226 @@ function App() {
 
   // --- Main Render ---
   return (
-    <div
-      className={`flex h-screen overflow-hidden ${
-        theme === 'dark' ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-900'
-      }`}
-    >
-      {/* Show connection list only if not connected */}
-      {appView === 'connect' && (
-        <ConnectionList
-          theme={theme}
-          connections={connections}
-          selectedConn={selectedConn}
-          expandedConn={showConnDetails ? selectedConn : null}
-          editingConn={editingConn}
-          isEditingConn={isEditingConn}
-          selectedColor={selectedColor}
-          isConnected={isConnected}
-          onSelectConnection={(conn) => {
-            setSelectedConn(conn);
-            setIsConnected(false);
-            setShowConnDetails(!showConnDetails && selectedConn?.id === conn.id ? false : true);
-          }}
-          onNewConnection={() => {
-            setShowNewConnModal(true);
-            setSelectedConn(null);
-            setIsConnected(false);
-            setShowConnDetails(false);
-          }}
-          onConnect={loadDatabaseTree}
-          onDeleteConnection={handleDeleteConnection}
-          onToggleTheme={toggleTheme}
-          onEdit={handleEditConnection}
-          onSave={handleUpdateConnection}
-          onCancel={() => {
-            setIsEditingConn(false);
-            setEditingConn(null);
-          }}
-          onEditingConnChange={setEditingConn}
-          onColorChange={setSelectedColor}
-        />
-      )}
+<div
+  className={`
+    w-screen h-screen
+    flex overflow-hidden
+    ${theme === 'dark'
+      ? 'bg-gray-900 text-gray-200'
+      : 'bg-white text-gray-900'
+    }
+  `}
+>
+  {/* CONNECTION VIEW */}
+  {appView === 'connect' && (
+    <div className="w-full h-full flex">
+      <ConnectionList
+        theme={theme}
+        connections={connections}
+        selectedConn={selectedConn}
+        expandedConn={showConnDetails ? selectedConn : null}
+        editingConn={editingConn}
+        isEditingConn={isEditingConn}
+        selectedColor={selectedColor}
+        isConnected={isConnected}
+        onSelectConnection={(conn) => {
+          setSelectedConn(conn);
+          setIsConnected(false);
+          setShowConnDetails(
+            !showConnDetails && selectedConn?.id === conn.id
+              ? false
+              : true
+          );
+        }}
+        onNewConnection={() => {
+          setShowNewConnModal(true);
+          setSelectedConn(null);
+          setIsConnected(false);
+          setShowConnDetails(false);
+        }}
+        onConnect={loadDatabaseTree}
+        onDeleteConnection={handleDeleteConnection}
+        onToggleTheme={toggleTheme}
+        onEdit={handleEditConnection}
+        onSave={handleUpdateConnection}
+        onCancel={() => {
+          setIsEditingConn(false);
+          setEditingConn(null);
+        }}
+        onEditingConnChange={setEditingConn}
+        onColorChange={setSelectedColor}
+      />
+    </div>
+  )}
 
-      {/* Main Area: table, query */}
-      {appView !== 'connect' && (
-        <div className="flex-1 flex flex-row overflow-hidden">
-          {/* Sidebar: List of tables, toggleable */}
-          {showSidebar && (
-            <div className="w-56 border-r border-gray-800 bg-gray-900 flex flex-col">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-gray-800">
-                <span className="font-semibold text-xs text-gray-400">Tables</span>
+  {/* MAIN APP */}
+  {appView !== 'connect' && (
+    <div className="flex flex-1 w-full h-full min-w-0 overflow-hidden">
+      
+      {/* SIDEBAR */}
+      {showSidebar && (
+        <div className="w-56 shrink-0 border-r border-gray-800 bg-gray-900 flex flex-col">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-gray-800">
+            <span className="font-semibold text-xs text-gray-400">
+              Tables
+            </span>
+
+            <button
+              onClick={() => setShowSidebar(false)}
+              className="text-xs text-gray-400 hover:text-gray-200"
+            >
+              Hide
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-auto">
+            {tree.flatMap((node) =>
+              node.tables.map((t) => (
                 <button
-                  onClick={() => setShowSidebar(false)}
-                  className="text-xs text-gray-400 hover:text-gray-200"
+                  key={node.schema + '.' + t.name}
+                  onClick={() => loadTable(node.schema, t.name)}
+                  className={`
+                    w-full text-left px-4 py-2 text-sm truncate
+                    ${
+                      selectedTable?.name === t.name
+                        ? 'bg-amber-900/40 text-amber-200'
+                        : 'hover:bg-gray-800 text-gray-300'
+                    }
+                  `}
                 >
-                  Hide
+                  {t.name}
                 </button>
-              </div>
-              <div className="flex-1 overflow-auto">
-                {tree.flatMap((node) =>
-                  node.tables.map((t) => (
-                    <button
-                      key={node.schema + '.' + t.name}
-                      onClick={() => loadTable(node.schema, t.name)}
-                      className={`w-full text-left px-4 py-2 text-sm truncate ${selectedTable?.name === t.name ? 'bg-amber-900/40 text-amber-200' : 'hover:bg-gray-800 text-gray-300'}`}
-                    >
-                      {t.name}
-                    </button>
-                  ))
-                )}
-              </div>
-              <div className="p-2 border-t border-gray-800">
-                <button
-                  onClick={async () => {
-                    if (selectedConn) await loadDatabaseTree(selectedConn);
-                  }}
-                  className="w-full px-2 py-1 text-xs rounded bg-amber-600 hover:bg-amber-500 text-white"
-                >
-                  Refresh
-                </button>
-                <button
-                  onClick={() => setAppView('query')}
-                  className="w-full mt-2 px-2 py-1 text-xs rounded bg-blue-600 hover:bg-blue-500 text-white"
-                >
-                  Query Editor
-                </button>
-                <button
-                  onClick={() => {
-                    setIsConnected(false);
-                    setSelectedConn(null);
-                    setTree([]);
-                    setAppView('connect');
-                  }}
-                  className="w-full mt-2 px-2 py-1 text-xs rounded bg-gray-800 hover:bg-gray-700 text-gray-300"
-                >
-                  Disconnect
-                </button>
-              </div>
-            </div>
-          )}
-          {/* Main content: Table or Query */}
-          <div className="flex-1 flex flex-col min-w-0">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900">
-              <div className="flex-none">
-                {appView === 'table' && selectedTable && (
-                  <span className="font-semibold text-base text-gray-200">{selectedTable.name}</span>
-                )}
-                {appView === 'query' && (
-                  <span className="font-semibold text-base text-gray-200">Query Editor</span>
-                )}
-              </div>
-              <div className="flex-none">
-                {appView === 'table' && (
-                  <button
-                    onClick={() => setAppView('query')}
-                    className="px-3 py-1 text-sm rounded bg-blue-600 hover:bg-blue-500 text-white"
-                  >
-                    Query Editor
-                  </button>
-                )}
-                {appView === 'query' && (
-                  <button
-                    onClick={() => setAppView('table')}
-                    className="px-3 py-1 text-sm rounded bg-gray-800 hover:bg-gray-700 text-gray-300"
-                  >
-                    Back to Tables
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="flex-1 min-w-0 min-h-0">
-              {/* Table Preview */}
-              {appView === 'table' && selectedTable && (
-                <div className="w-full h-full overflow-auto">
-                  <TablePreview
-                    theme={theme}
-                    selectedTable={selectedTable}
-                    tableData={tableData}
-                  />
-                </div>
-              )}
-              {/* Query Editor */}
-              {appView === 'query' && (
-                <div className="w-full h-full overflow-auto">
-                  <QueryEditor
-                    theme={theme}
-                    sqlQuery={sqlQuery}
-                    onQueryChange={setSqlQuery}
-                    isRunning={isRunning}
-                    onRunQuery={async () => {
-                      await runQuery();
-                    }}
-                    error={error}
-                    queryResult={queryResult}
-                  />
-                </div>
-              )}
-              {/* Empty state if no table selected */}
-              {appView === 'table' && !selectedTable && (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="text-gray-500 text-lg">Select a table from the sidebar</span>
-                </div>
-              )}
-            </div>
+              ))
+            )}
+          </div>
+
+          <div className="p-2 border-t border-gray-800">
+            <button
+              onClick={async () => {
+                if (selectedConn) await loadDatabaseTree(selectedConn);
+              }}
+              className="w-full px-2 py-1 text-xs rounded bg-amber-600 hover:bg-amber-500 text-white"
+            >
+              Refresh
+            </button>
+
+            <button
+              onClick={() => setAppView('query')}
+              className="w-full mt-2 px-2 py-1 text-xs rounded bg-blue-600 hover:bg-blue-500 text-white"
+            >
+              Query Editor
+            </button>
+
+            <button
+              onClick={() => {
+                setIsConnected(false);
+                setSelectedConn(null);
+                setTree([]);
+                setAppView('connect');
+              }}
+              className="w-full mt-2 px-2 py-1 text-xs rounded bg-gray-800 hover:bg-gray-700 text-gray-300"
+            >
+              Disconnect
+            </button>
           </div>
         </div>
       )}
 
-      {/* Connection Modal */}
-      <ConnectionModal
-        isOpen={showNewConnModal}
-        onClose={() => setShowNewConnModal(false)}
-        newConn={newConn}
-        setNewConn={setNewConn}
-        onTest={handleTestConnection}
-        onSave={handleSaveConnection}
-        theme={theme}
-      />
+      {/* MAIN CONTENT */}
+      <div className="flex flex-col flex-1 w-full min-w-0 overflow-hidden">
+        
+        {/* HEADER */}
+        <div className="w-full flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900">
+          
+          <div className="min-w-0 truncate">
+            {appView === 'table' && selectedTable && (
+              <span className="font-semibold text-base text-gray-200">
+                {selectedTable.name}
+              </span>
+            )}
 
-      {/* Toast Notifications */}
-      <ToastNotifications toasts={toasts} />
+            {appView === 'query' && (
+              <span className="font-semibold text-base text-gray-200">
+                Query Editor
+              </span>
+            )}
+          </div>
+
+          <div className="ml-auto shrink-0">
+            {appView === 'table' && (
+              <button
+                onClick={() => setAppView('query')}
+                className="px-3 py-1 text-sm rounded bg-blue-600 hover:bg-blue-500 text-white"
+              >
+                Query Editor
+              </button>
+            )}
+
+            {appView === 'query' && (
+              <button
+                onClick={() => setAppView('table')}
+                className="px-3 py-1 text-sm rounded bg-gray-800 hover:bg-gray-700 text-gray-300"
+              >
+                Back to Tables
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* BODY */}
+        <div className="flex-1 w-full min-w-0 min-h-0 overflow-auto">
+          
+          {appView === 'table' && selectedTable && (
+            <div className="w-full h-full">
+              <TablePreview
+                theme={theme}
+                selectedTable={selectedTable}
+                tableData={tableData}
+              />
+            </div>
+          )}
+
+          {appView === 'query' && (
+            <div className="w-full h-full">
+              <QueryEditor
+                theme={theme}
+                sqlQuery={sqlQuery}
+                onQueryChange={setSqlQuery}
+                isRunning={isRunning}
+                onRunQuery={async () => {
+                  await runQuery();
+                }}
+                error={error}
+                queryResult={queryResult}
+              />
+            </div>
+          )}
+
+          {appView === 'table' && !selectedTable && (
+            <div className="w-full h-full flex items-center justify-center">
+              <span className="text-gray-500 text-lg">
+                Select a table from the sidebar
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
+  )}
+
+  {/* MODALS */}
+  <ConnectionModal
+    isOpen={showNewConnModal}
+    onClose={() => setShowNewConnModal(false)}
+    newConn={newConn}
+    setNewConn={setNewConn}
+    onTest={handleTestConnection}
+    onSave={handleSaveConnection}
+    theme={theme}
+  />
+
+  <ToastNotifications toasts={toasts} />
+</div>
   );
 }
 export default App;
