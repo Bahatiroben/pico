@@ -25,3 +25,5 @@ to this in your browser, and you can call your Go code from devtools.
 ## Building
 
 To build a redistributable, production mode package, use `wails build`.
+
+<img width="1437" height="867" alt="image" src="https://github.com/user-attachments/assets/91002090-c4c6-4732-b1b9-01725a91d4d3" />
