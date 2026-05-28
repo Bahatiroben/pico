@@ -52,7 +52,7 @@ func (a *App) startup(ctx context.Context) {
 	}
 }
 
-// ==================== CONNECTIONS ====================
+// CONNECTIONS 
 
 func (a *App) GetConnections() []models.Connection {
 	a.logger.Printf("GetConnections called - returning %d connections", len(a.conns))
@@ -109,7 +109,7 @@ func (a *App) DeleteConnection(id string) error {
 	return fmt.Errorf("connection not found")
 }
 
-// ==================== METADATA ====================
+// METADATA 
 
 func (a *App) GetDatabases(connID string) ([]string, error) {
 	a.logger.Printf("GetDatabases: requesting databases from connection %s", connID)
